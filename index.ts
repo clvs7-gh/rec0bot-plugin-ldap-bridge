@@ -45,7 +45,7 @@ const syncUsers = async () => {
                     reject(_e);
                 });
                 r.on('searchEntry', (entry) => ldapUsers.push({
-                    username: entry.object.cn,
+                    username: entry.object.samAccountName,
                     fullname: entry.object.displayName
                 }));
                 r.on('end', (result) => resolve());
@@ -54,10 +54,6 @@ const syncUsers = async () => {
             reject(e);
         }
     });
-
-    for ( const t of ldapContext['notifyTargets'] ) {
-        await mBot.firePluginEvent(t, 'sync-user', ldapUsers);
-    }
 };
 
 const notifyUsers = async () => {
