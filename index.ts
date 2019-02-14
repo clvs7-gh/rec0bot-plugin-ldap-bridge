@@ -33,7 +33,7 @@ const syncUsers = async () => {
             client.search(ldapContext['searchBaseDN'], {
                 filter: ldapContext['searchFilter'],
                 scope: 'sub',
-                attributes: ['displayName', 'cn']
+                attributes: ['sAMAccountName', 'displayName', 'cn']
             }, (e, r) => {
                 if (e) {
                     logger.warn('Could not search entry from ldap server : ', e);
@@ -45,8 +45,8 @@ const syncUsers = async () => {
                     reject(_e);
                 });
                 r.on('searchEntry', (entry) => ldapUsers.push({
-                    username: entry.object.samAccountName,
-                    fullname: entry.object.displayName
+                    username: entry.object.sAMAccountName,
+                    fullname: entry.object.displayName || entry.object.cn
                 }));
                 r.on('end', (result) => resolve());
             });
@@ -56,8 +56,8 @@ const syncUsers = async () => {
     });
 };
 
-const notifyUsers = async () => {
-    for ( const t of ldapContext['notifyTargets'] ) {
+const notifyUsers = async (targetId?: string) => {
+    for ( const t of (targetId ? [targetId] : ldapContext['notifyTargets']) ) {
         await mBot.firePluginEvent(t, 'sync-user', ldapUsers);
     }
 };
@@ -98,8 +98,8 @@ export const onMessage = (message: string, channelId: string, userId: string, da
 };
 
 export const onPluginEvent = async (eventName: string, value?: any, fromId?: string) => {
-    if (eventName === 'scheduled:sync') {
+    if (eventName === 'scheduled:sync' || eventName === 'sync-request') {
         await syncUsers();
-        await notifyUsers();
+        await notifyUsers(fromId);
     }
 };
