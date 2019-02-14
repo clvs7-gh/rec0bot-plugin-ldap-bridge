@@ -1,6 +1,6 @@
 {
   "name": "ldap-bridge",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A bridge plugin that synchronize users info with LDAP server and notify them to other plugins.",
   "filter_prefixes": [
     "sindoi"
