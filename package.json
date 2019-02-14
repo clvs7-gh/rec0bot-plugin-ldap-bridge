@@ -1,0 +1,31 @@
+{
+  "name": "ldap-bridge",
+  "version": "1.0.0",
+  "description": "A bridge plugin that synchronize users info with LDAP server and notify them to other plugins.",
+  "filter_prefixes": [
+    "sindoi"
+  ],
+  "scheduled_events": [
+    {
+      "time": "0 */15 * * * *",
+      "event": "sync"
+    }
+  ],
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc index.ts",
+    "clean": "rm -rf index.js node_modules",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "clvs7 (Arisaka Mashiro)",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@log4js-node/log4js-api": "^1.0.2",
+    "ldapjs": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/ldapjs": "^1.0.3",
+    "@types/node": "^11.9.3",
+    "typescript": "^3.3.3"
+  }
+}
