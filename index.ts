@@ -10,13 +10,18 @@ let logger: Logger;
 let metadata: { [key: string]: string };
 
 const ldapContext: { [key: string]: any } = {};
-const ldapUsers: { username: string, fullname: string }[] = [];
 
-const syncUsers = async () => {
-    // Sync users
-    await new Promise(async (resolve, reject) => {
+interface User {
+    username: string;
+    fullname: string;
+}
+
+const getUsers = async (): Promise<User[]> => {
+    // Get users
+    return await new Promise(async (resolve, reject) => {
+        const ldapUsers: User[] = [];
         try {
-            const tlsOptions = ldapContext['clientCertPath'] ? {
+            const tlsOptions = ldapContext['clientCertPath'].length > 0 ? {
                 ca: [await promisify(fs.readFile)(ldapContext['clientCertPath'], {encoding: 'utf-8'})]
             } : {};
 
@@ -24,9 +29,13 @@ const syncUsers = async () => {
                 url: `${ldapContext['proto']}://${ldapContext['host']}:${ldapContext['port']}}`,
                 tlsOptions: tlsOptions
             });
+            client.on('error', (e) => {
+                logger.warn('Error has occurred while connecting to ldap server : ', e);
+                reject(e);
+            });
             client.bind(ldapContext['userDN'], ldapContext['secret'], (e) => {
                 if (e) {
-                    logger.warn('Could not connect to ldap server : ', e);
+                    logger.warn('Could not bind to ldap server : ', e);
                     reject(e);
                 }
             });
@@ -48,7 +57,7 @@ const syncUsers = async () => {
                     username: entry.object.sAMAccountName,
                     fullname: entry.object.displayName || entry.object.cn
                 }));
-                r.on('end', (result) => resolve());
+                r.on('end', (result) => resolve(ldapUsers));
             });
         } catch (e) {
             reject(e);
@@ -56,7 +65,7 @@ const syncUsers = async () => {
     });
 };
 
-const notifyUsers = async (targetId?: string) => {
+const notifyUsers = async (ldapUsers: User[], targetId?: string) => {
     for ( const t of (targetId ? [targetId] : ldapContext['notifyTargets']) ) {
         await mBot.firePluginEvent(t, 'sync-user', ldapUsers);
     }
@@ -74,8 +83,10 @@ export const init = async (bot: BotProxy, options: { [key: string]: any }): Prom
     ldapContext['port'] = Number((process.env.REC0_ENV_LDAP_BRIDGE_PORT || '636').trim());
     ldapContext['userDN'] = (process.env.REC0_ENV_LDAP_BRIDGE_USERDN || '').trim();
     ldapContext['secret'] = (process.env.REC0_ENV_LDAP_BRIDGE_PASSWORD || '').trim();
-    ldapContext['clientCertPath'] = (process.env.REC0_ENV_LDAP_BRIDGE_CLIENT_CERT_PATH ||
-        path.resolve(__dirname, 'client-cert.pem')).trim();
+    ldapContext['clientCertPath'] = (process.env.REC0_ENV_LDAP_BRIDGE_CLIENT_CERT_PATH || '').trim();
+    if (ldapContext['clientCertPath'].length > 0) {
+        ldapContext['clientCertPath'] = path.resolve(__dirname, ldapContext['clientCertPath']);
+    }
     ldapContext['searchBaseDN'] = (process.env.REC0_ENV_LDAP_BRIDGE_SEARCH_BASEDN || '').trim();
     ldapContext['searchFilter'] = (process.env.REC0_ENV_LDAP_BRIDGE_SEARCH_FILTER || '').trim();
     ldapContext['notifyTargets'] = (process.env.REC0_ENV_LDAP_BRIDGE_NOTIFY_TARGETS || '')
@@ -85,8 +96,8 @@ export const init = async (bot: BotProxy, options: { [key: string]: any }): Prom
 export const onStart = async () => {
     logger.debug('onStart()');
     // Sync on start
-    await syncUsers();
-    await notifyUsers();
+    const ldapUsers = await getUsers();
+    await notifyUsers(ldapUsers);
 };
 
 export const onStop = () => {
@@ -99,7 +110,7 @@ export const onMessage = (message: string, channelId: string, userId: string, da
 
 export const onPluginEvent = async (eventName: string, value?: any, fromId?: string) => {
     if (eventName === 'scheduled:sync' || eventName === 'sync-request') {
-        await syncUsers();
-        await notifyUsers(fromId);
+        const ldapUsers = await getUsers();
+        await notifyUsers(ldapUsers);
     }
 };
