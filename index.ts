@@ -4,6 +4,7 @@ import * as ldap from 'ldapjs';
 import * as path from 'path';
 import { promisify } from 'util';
 import { BotProxy } from './bot-proxy.interface';
+import { MessageContext } from './message-context.interface';
 
 let mBot: BotProxy;
 let logger: Logger;
@@ -104,7 +105,7 @@ export const onStop = () => {
     logger.debug('onStop()');
 };
 
-export const onMessage = (message: string, channelId: string, userId: string, data: { [key: string]: any }) => {
+export const onMessage = (message: string, context: MessageContext, data: { [key: string]: any }) => {
     // Nop
 };
 
