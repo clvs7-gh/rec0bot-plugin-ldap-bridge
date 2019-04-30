@@ -55,8 +55,8 @@ const getUsers = async (): Promise<User[]> => {
                     reject(_e);
                 });
                 r.on('searchEntry', (entry) => ldapUsers.push({
-                    username: entry.object.sAMAccountName,
-                    fullname: entry.object.displayName || entry.object.cn
+                    username: entry.object.sAMAccountName as string,
+                    fullname: entry.object.displayName as string || entry.object.cn as string
                 }));
                 r.on('end', (result) => resolve(ldapUsers));
             });
