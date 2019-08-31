@@ -3,7 +3,7 @@
   "version": "1.0.2",
   "description": "A bridge plugin that synchronize users info with LDAP server and notify them to other plugins.",
   "filter_prefixes": [
-    "sindoi"
+    "ldap"
   ],
   "scheduled_events": [
     {
