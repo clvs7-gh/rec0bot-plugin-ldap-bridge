@@ -19,7 +19,7 @@ If you want to clean up built files, run `npm run clean`.
 `REC0_ENV_LDAP_BRIDGE_NOTIFY_TARGETS` : Plugin names that notify users info to. You can specify multiple names with comma-separated.
 
 ## Author
-clvs7 (Arisaka Mashiro)
+clvs7 (Arisaka Mayuki)
 
 ## License
 Apache License 2.0
